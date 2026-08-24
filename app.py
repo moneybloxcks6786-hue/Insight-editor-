@@ -1,0 +1,76 @@
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Insight Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body class="bg-slate-900 text-white p-4 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-700">
+        <h1 class="text-xl font-bold mb-4 text-center text-pink-500">Instagram Insight Editor</h1>
+        
+        <div class="mb-4">
+            <label class="block text-sm text-slate-400 mb-1">Post Reach</label>
+            <input type="number" id="reachInput" class="w-full p-2.5 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-pink-500" value="12500">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm text-slate-400 mb-1">Engagement Rate (%)</label>
+            <input type="text" id="engInput" class="w-full p-2.5 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-pink-500" value="4.8%">
+        </div>
+
+        <button onclick="saveInsights()" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 p-3 rounded-lg font-bold hover:opacity-90 transition">Save Changes</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function saveInsights() {
+            let reach = document.getElementById('reachInput').value;
+            let engagement = document.getElementById('engInput').value;
+
+            fetch('/api/update-insights', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reach: reach, engagement: engagement })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                tg.close();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save insights.');
+            });
+        }
+    </script>
+</body>
+</html>
+"""
+
+@app.route('/')
+def index():
+    return HTML_TEMPLATE
+
+@app.route('/api/update-insights', methods=['POST'])
+def update_insights():
+    data = request.json
+    reach = data.get('reach')
+    engagement = data.get('engagement')
+    print(f"Received Reach: {reach}, Engagement: {engagement}")
+    return jsonify({
+        "status": "success", 
+        "message": "Insights updated successfully!"
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True)
